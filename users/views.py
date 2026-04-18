@@ -3,7 +3,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import RegisterSerializer, UserProfileSerializer, NotificationSerializer
+from .serializers import RegisterSerializer, UserProfileSerializer, NotificationSerializer, UserAdminSerializer
 from .models import User, Notification
 from incidents.models import Incident
 from incidents.serializers import IncidentSerializer, CommentSerializer
@@ -90,3 +90,29 @@ class MyActivityView(APIView):
             'comments': CommentSerializer(comments, many=True).data,
             'notifications': NotificationSerializer(notifications, many=True).data,
         })
+
+
+class IsAdminPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.is_admin_user()
+
+
+class UserListView(generics.ListAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserProfileSerializer
+    permission_classes = [IsAdminPermission]
+
+
+class UserUpdateRoleView(generics.UpdateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserAdminSerializer
+    permission_classes = [IsAdminPermission]
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        role = request.data.get('role')
+        if role not in ['citizen', 'admin', 'moderator']:
+            return Response({"error": "Rôle invalide."}, status=status.HTTP_400_BAD_REQUEST)
+        instance.role = role
+        instance.save()
+        return Response(UserAdminSerializer(instance).data)

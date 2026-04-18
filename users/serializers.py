@@ -8,10 +8,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         write_only=True, required=True, validators=[validate_password]
     )
     password_confirm = serializers.CharField(write_only=True, required=True)
+    role = serializers.CharField(read_only=True, default='citizen')
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'password_confirm', 'phone']
+        fields = ['username', 'email', 'password', 'password_confirm', 'phone', 'role']
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
@@ -29,6 +30,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'phone', 'role', 'reputation_score', 'created_at']
         read_only_fields = ['role', 'reputation_score', 'created_at']
+
+
+class UserAdminSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'phone', 'role', 'reputation_score', 'created_at']
+        read_only_fields = ['reputation_score', 'created_at']
 
 
 class NotificationSerializer(serializers.ModelSerializer):
